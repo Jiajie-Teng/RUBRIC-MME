@@ -1,0 +1,40 @@
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run RUBRIC-MME Phase 1 generation with Gemini API.")
+    parser.add_argument(
+        "--tasks",
+        default="omnibench",
+        help="Comma-separated RUBRIC-MME task names, or 'omnibench' / 'all' for all 4 tasks.",
+    )
+    parser.add_argument("--model", default="gemini-2.5-flash", help="Gemini model name.")
+    parser.add_argument("--data-root", default=str(DEFAULT_DATA_ROOT if DEFAULT_DATA_ROOT.exists() else REPO_ROOT), help="Root directory for local RUBRIC-MME JSON/media data.")
+    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="Directory to store JSONL/JSON outputs.")
+    parser.add_argument("--limit", type=int, default=None, help="Optional limit per task.")
+    parser.add_argument("--dialogue-id", default=None, help="Run only one dialogue id.")
+    parser.add_argument("--resume", action="store_true", help="Resume from an existing samples JSONL file.")
+    parser.add_argument("--max-retries", type=int, default=5, help="Retry count per round.")
+    parser.add_argument("--retry-sleep", type=float, default=5.0, help="Seconds to sleep between retries.")
+    parser.add_argument("--poll-interval", type=float, default=5.0, help="Seconds to poll uploaded Gemini files.")
+    parser.add_argument("--timeout-seconds", type=float, default=600.0, help="Max wait time for uploaded Gemini files.")
+    parser.add_argument(
+        "--api-key-env",
+        default="GOOGLE_API_KEY",
+        help="Environment variable name containing the Gemini API key.",
+    )
+    parser.add_argument("--temperature", type=float, default=0.0, help="Generation temperature.")
+    parser.add_argument("--max-output-tokens", type=int, default=512, help="Max output tokens per round.")
+    parser.add_argument(
+        "--save-raw-response",
+        action="store_true",
+        help="Include the raw Gemini text in the saved per-round payload.",
+    )
+    parser.add_argument("--phase2-output-dir", default="", help="Optional directory to also write standardized RUBRIC-MME Phase 2 outputs.")
+    parser.add_argument("--phase2-keep-existing", action="store_true", help="Keep existing Phase 2 files instead of clearing them before writing.")
+    parser.add_argument("--phase3-output-dir", default="", help="Optional directory to also write RUBRIC-MME Phase 3 judge outputs after Phase 2.")
+    parser.add_argument("--phase3-judge-model", default="gemini-3.1-pro-preview", help="Gemini model name used for Phase 3 judging.")
+    parser.add_argument("--phase3-judge-api-key-env", default="GOOGLE_API_KEY", help="Environment variable name containing the Phase 3 judge Gemini API key.")
+    parser.add_argument("--phase3-keep-existing", action="store_true", help="Keep existing Phase 3 files instead of clearing them before writing.")
+    parser.add_argument("--phase3-save-prompt-text", action="store_true", help="Also save full Phase 3 judge prompts into the output records.")
+    parser.add_argument("--phase3-allow-incomplete-dialogues", action="store_true", help="Allow session-level judging even when some round predictions are missing.")
+    return parser.parse_args()
+
+

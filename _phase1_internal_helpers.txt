@@ -1,0 +1,27 @@
+﻿def resolve_local_path(media_root: Path, relative_path: str) -> Optional[Path]:
+    if not relative_path:
+        return None
+    candidate = Path(relative_path)
+    if candidate.is_absolute():
+        return candidate if candidate.exists() else None
+    combined = (media_root / candidate).resolve()
+    return combined if combined.exists() else None
+
+
+def encode_file_to_data_url(file_path: Path) -> Tuple[str, str, int]:
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    if not mime_type:
+        suffix = file_path.suffix.lower()
+        if suffix in IMAGE_EXTENSIONS:
+            mime_type = "image/jpeg" if suffix in {".jpg", ".jpeg"} else f"image/{suffix.lstrip('.')}"
+        elif suffix in AUDIO_EXTENSIONS:
+            mime_type = "audio/mpeg" if suffix == ".mp3" else f"audio/{suffix.lstrip('.')}"
+        elif suffix in VIDEO_EXTENSIONS:
+            mime_type = "video/mp4" if suffix == ".mp4" else f"video/{suffix.lstrip('.')}"
+        else:
+            mime_type = "application/octet-stream"
+    raw = file_path.read_bytes()
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}", mime_type, len(raw)
+
+

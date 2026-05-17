@@ -1,0 +1,56 @@
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="运行 MatrixLLM 内部接口版 RUBRIC-MME 第一阶段推理。")
+    parser.add_argument("--tasks", default="omnibench", help="逗号分隔的任务名；omnibench/all 表示四个任务全部运行。")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="被测试模型名称。")
+    parser.add_argument("--data-root", default=str(DEFAULT_DATA_ROOT if DEFAULT_DATA_ROOT.exists() else REPO_ROOT), help="RUBRIC-MME JSON 数据根目录。")
+    parser.add_argument(
+        "--media-root",
+        default=str(DEFAULT_MEDIA_ROOT if DEFAULT_MEDIA_ROOT.exists() else REPO_ROOT),
+        help="图片、视频、音频等相对路径所对应的媒体根目录。",
+    )
+    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="输出目录。")
+    parser.add_argument("--limit", type=int, default=None, help="每个任务最多处理多少个 dialogue。")
+    parser.add_argument("--dialogue-id", default=None, help="只运行指定的 dialogue_id。")
+    parser.add_argument("--resume", action="store_true", help="基于已有 samples.jsonl 跳过已完成 dialogue。")
+    parser.add_argument("--api-url", default=DEFAULT_API_URL, help="内部接口地址。")
+    parser.add_argument("--api-key-env", default=DEFAULT_TOKEN_ENV, help="保存访问 token 的环境变量名。")
+    parser.add_argument("--timeout", type=int, default=120, help="单次请求超时时间（秒）。")
+    parser.add_argument("--max-retries", type=int, default=5, help="每轮请求最大重试次数。")
+    parser.add_argument("--retry-sleep", type=float, default=3.0, help="普通重试基础等待时间（秒）。")
+    parser.add_argument("--rate-limit-retry-sleep", type=float, default=20.0, help="429 限流时的基础退避时间（秒）。")
+    parser.add_argument("--rate-limit-max-sleep", type=float, default=120.0, help="429 限流时的最大退避时间（秒）。")
+    parser.add_argument("--rate-limit-round-cooldown", type=float, default=30.0, help="某轮命中 429 后，进入下一轮前额外冷却时间。")
+    parser.add_argument("--inter-round-sleep", type=float, default=2.0, help="轮与轮之间的默认等待时间（秒）。")
+    parser.add_argument("--temperature", type=float, default=0.0, help="采样温度。")
+    parser.add_argument("--top-p", type=float, default=0.95, help="top_p。")
+    parser.add_argument("--max-output-tokens", type=int, default=512, help="单轮最大输出 token。")
+    parser.add_argument(
+        "--audio-content-mode",
+        default="audio_url",
+        choices=["audio_url", "input_audio"],
+        help="TTS 问题音频的发送方式：audio_url 使用 URL，input_audio 直接内联输入。",
+    )
+    parser.add_argument(
+        "--video-content-mode",
+        default="auto",
+        choices=["auto", "local", "remote"],
+        help="视频输入策略：auto 自动选择，local 尽量本地输入，remote 尽量远程/云端引用。",
+    )
+    parser.add_argument(
+        "--max-inline-video-bytes",
+        type=int,
+        default=5_000_000,
+        help="在 auto 模式下，允许本地内联发送的视频大小上限（字节）。",
+    )
+    parser.add_argument("--save-request-blueprint", action="store_true", help="将请求蓝图也写入每轮记录，方便调试。")
+    parser.add_argument("--phase2-output-dir", default="", help="可选：在 Phase 1 结束后继续生成 Phase 2 结果。")
+    parser.add_argument("--phase2-keep-existing", action="store_true", help="保留现有 Phase 2 输出而不是先清空。")
+    parser.add_argument("--phase3-output-dir", default="", help="可选：在 Phase 2 结束后继续生成 Phase 3 judge 结果。")
+    parser.add_argument("--phase3-judge-model", default="gemini-3.1-pro-preview", help="Phase 3 使用的裁判模型。")
+    parser.add_argument("--phase3-judge-api-key-env", default=DEFAULT_TOKEN_ENV, help="Phase 3 裁判模型 token 的环境变量名。")
+    parser.add_argument("--phase3-keep-existing", action="store_true", help="保留现有 Phase 3 输出而不是先清空。")
+    parser.add_argument("--phase3-save-prompt-text", action="store_true", help="把 Phase 3 judge prompt 文本保存到输出里。")
+    parser.add_argument("--phase3-allow-incomplete-dialogues", action="store_true", help="当部分 round 失败时仍允许做 session-level judge。")
+    return parser.parse_args()
+
+
